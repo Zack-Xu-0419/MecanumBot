@@ -15,7 +15,7 @@ class motorController:
         for i in self.portsForward:
             print(i)
             GPIO.output(i, GPIO.HIGH)
-        time.sleep(1)
+        time.sleep(0.2)
         for i in self.portsForward:
             GPIO.output(i, GPIO.LOW)
 
@@ -23,7 +23,7 @@ class motorController:
         for i in self.portsBackward:
             print(i)
             GPIO.output(i, GPIO.HIGH)
-        time.sleep(1)
+        time.sleep(0.2)
         for i in self.portsBackward:
             GPIO.output(i, GPIO.LOW)
         
@@ -40,7 +40,6 @@ class motorController:
             self.motors.append(softPWM)
     
     def pwmControl(self, portNumber, dutyCycle):
-        print(self.motors)
         ports = self.portsForward + self.portsBackward
         index = ports.index(portNumber)
         self.motors[index].ChangeDutyCycle(dutyCycle)
@@ -48,11 +47,23 @@ class motorController:
 class setup():
     def __init__(self, ports):
         GPIO.setmode(GPIO.BCM)
+        for i in ports:
+            GPIO.setup(i, GPIO.OUT)
+
+class power():
+    def __init__(self):
+        GPIO.setmode(GPIO.BCM)
         GPIO.setup(0, GPIO.OUT)
         GPIO.output(0, True)
         time.sleep(0.1)
         GPIO.output(0, False)
         GPIO.cleanup(0)
         time.sleep(0.3)
-        for i in ports:
-            GPIO.setup(i, GPIO.OUT)
+    def activate(self):
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(0, GPIO.OUT)
+        GPIO.output(0, True)
+        time.sleep(0.1)
+        GPIO.output(0, False)
+        GPIO.cleanup(0)
+        time.sleep(0.3)
