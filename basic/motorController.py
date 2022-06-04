@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 import time
+import math
 
 class motorController:
     def __init__(self, portsForward, portsBackward):
@@ -42,7 +43,11 @@ class motorController:
     def pwmControl(self, portNumber, dutyCycle):
         ports = self.portsForward + self.portsBackward
         index = ports.index(portNumber)
-        self.motors[index].ChangeDutyCycle(dutyCycle)
+        self.motors[index].ChangeDutyCycle(math.sqrt(dutyCycle/100) * 100)
+    
+    def stop(self):
+        for i in self.portsForward + self.portsBackward:
+            self.pwmControl(i, 0)
 
 class setup():
     def __init__(self, ports):

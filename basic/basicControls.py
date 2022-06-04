@@ -1,63 +1,55 @@
 import motorController as controller
 import time
 import pygame
+import math
 
-forward = [13, 27, 6, 16]
-backward = [19, 17, 5, 26]
-
-
-power = controller.power()
-
-motorCtrl = controller.motorController(forward, backward)
-motorCtrl.runTest()
-time.sleep(2)
-motorCtrl.startPWM()
-time.sleep(2)
+forward = [27, 6, 13, 16]
+backward = [17, 5, 19, 26]
 
 
+# power = controller.power()
 
-pygame.init()
-pygame.joystick.init()
-
-lastMoveTime = time.time()
-
-while True:
-    for event in pygame.event.get():
-        pass
-    joystick = pygame.joystick.Joystick(0)
-    joystick.init()
-    axis = joystick.get_axis(0)
-    value = joystick.get_axis(1) * -100
+# motorCtrl = controller.motorController(forward, backward)
+# motorCtrl.runTest()
+# time.sleep(2)
+# motorCtrl.startPWM()
+# time.sleep(2)
 
 
-    if value != 0:
-        if time.time() - lastMoveTime > 5:
-            print("Activated")
-            power.activate()
-        lastMoveTime = time.time()
-    
-    if value < 0:
-        value *= -1
-        motorCtrl.pwmControl(19, value)
-        motorCtrl.pwmControl(17, value)
-        motorCtrl.pwmControl(5, value)
-        motorCtrl.pwmControl(26, value)
+class robotMovement:
+    def __init__(self, forward, backward, runTest):
+        self.forward = forward
+        self.backward = backward
+        self.motor = controller.motorController(forward, backward)
+        if runTest:
+            motor.runTest()
+        self.motor.startPWM()
+        controller.power.activate(self)
+        time.sleep(1)
+    def move(self, angle, power, turn = 0):
+        self.powers = []
+        self.powers.append(power * math.sin(math.radians(angle + 45)) - turn) #RightFront
+        self.powers.append(self.powers[0] + 2 * turn) #LeftBack
+        self.powers.append(power * math.cos(math.radians(angle + 45)) + turn) #LeftFront
+        self.powers.append(self.powers[2] - 2 * turn) #RightBack
 
-        motorCtrl.pwmControl(13, 0)
-        motorCtrl.pwmControl(27, 0)
-        motorCtrl.pwmControl(6, 0)
-        motorCtrl.pwmControl(16, 0)
-    else:
+        counter = 0
+        # Set Power
+        for i in self.powers:
+            if(i > 100):
+                i = 100
+            if(i < -100):
+                i = -100
+            print(i)
+            if(i > 0):
+                self.motor.pwmControl(self.forward[counter], i)
+                self.motor.pwmControl(self.backward[counter], 0)
+            else:
+                self.motor.pwmControl(self.backward[counter], -i)
+                self.motor.pwmControl(self.forward[counter], 0)
+            counter+=1
+    def stop(self):
+        self.motor.stop()
         
-        motorCtrl.pwmControl(13, value)
-        motorCtrl.pwmControl(27, value)
-        motorCtrl.pwmControl(6, value)
-        motorCtrl.pwmControl(16, value)
 
-        motorCtrl.pwmControl(19, 0)
-        motorCtrl.pwmControl(17, 0)
-        motorCtrl.pwmControl(5, 0)
-        motorCtrl.pwmControl(26, 0)
-    
 
-    time.sleep(0.1)
