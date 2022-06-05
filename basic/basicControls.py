@@ -25,7 +25,8 @@ class robotMovement:
             motor.runTest()
         self.motor.startPWM()
         controller.power.activate(self)
-        time.sleep(1)
+        self.lastMoveTime = time.time()
+        time.sleep(0.3)
     def move(self, angle, power, turn = 0):
         self.powers = []
         self.powers.append(power * math.sin(math.radians(angle + 45)) - turn) #RightFront
@@ -36,11 +37,14 @@ class robotMovement:
         counter = 0
         # Set Power
         for i in self.powers:
+
+            if(time.time() - self.lastMoveTime > 5):
+                controller.power.activate(self)
             if(i > 100):
                 i = 100
             if(i < -100):
                 i = -100
-            print(i)
+            # print(i)
             if(i > 0):
                 self.motor.pwmControl(self.forward[counter], i)
                 self.motor.pwmControl(self.backward[counter], 0)
@@ -48,8 +52,11 @@ class robotMovement:
                 self.motor.pwmControl(self.backward[counter], -i)
                 self.motor.pwmControl(self.forward[counter], 0)
             counter+=1
+        self.lastMoveTime = time.time()
     def stop(self):
         self.motor.stop()
+    def on(self):
+        controller.power.activate(self)
         
 
 
