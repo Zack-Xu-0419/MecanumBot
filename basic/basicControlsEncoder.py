@@ -42,7 +42,7 @@ heading = 0
 startTime = time.time()
 prevError = 0
 
-sleep = 0.01
+sleep = 0.001
 
 pSet = 1.7 * sleep / 0.05
 iSet = 0.6
@@ -52,6 +52,7 @@ I = 0
 
 # Encoder
 e = encoder.encoder(encoderPorts)
+encoderTest = False
 
 
 while True:
@@ -68,11 +69,26 @@ while True:
     if joystick.get_button(12) == 1:
         exit()
     if joystick.get_button(3) == 1:
-        pSet = float(input("P")) * sleep /0.05
+        pSet = float(input("P")) * sleep / 0.05
         iSet = float(input("I"))
         dSet = float(input("D"))
     if joystick.get_button(14) == 1:
         movement.on()
+    if joystick.get_button(0) == 1:
+        encoderTest = True
+    if joystick.get_button(1) == 1:
+        encoderTest = False
+
+    # update encoder position and get encoder
+    e.record()
+    position = e.get()
+    if(y < 0):
+        e.directionSet(-1)
+
+    if encoderTest:
+        # print(position)
+        y = -position[0]
+        x = 0
 
     if headingAssist:
         # Get current headingtimeDif = time.time() - startTime
@@ -89,7 +105,7 @@ while True:
         I += error * timeDif * iSet
         I/=2
         D = ((prevError - error) / timeDif) * dSet
-        print(f"P:{P}, I:{I}, D:{D}")
+        # print(f"P:{P}, I:{I}, D:{D}")
         prevError = error
         turn = (P+I-D)
 
@@ -107,6 +123,11 @@ while True:
     if angle < 0:
         angle += 180
         angle = 180 - angle * -1
+    
+    if angle > 90 and angle < 270:
+        e.directionSet(-1)
+    else:
+        e.directionSet(1)
     
     power = math.sqrt(x*x + y*y)
 
