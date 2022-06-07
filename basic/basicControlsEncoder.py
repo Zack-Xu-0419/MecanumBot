@@ -29,6 +29,7 @@ class robotMovement:
         self.lastMoveTime = time.time()
         time.sleep(0.3)
         self.e = encoder.encoder([14, 18, 22, 15])
+        self.powers = [0, 0, 0, 0]
 
     def move(self, angle, power, turn=0):
         self.powers = []
@@ -39,8 +40,20 @@ class robotMovement:
             power * math.cos(math.radians(angle + 45)) + turn)  # LeftFront
         self.powers.append(self.powers[2] - 2 * turn)  # RightBack
 
+        self.setPower()
+    
+    def setPower(self, powers = []):
+        if len(powers) != 0:
+            print("NOTZERO")
+            self.powers = powers
+            # for i in range(4):
+            #     self.powers[i] = -1 * self.powers[i]
+            self.e.directionSet(2)
         counter = 0
+
         # Set Power
+        print("PowerSet")
+        print(self.powers)
         for i in self.powers:
 
             if(time.time() - self.lastMoveTime > 5):
@@ -63,6 +76,7 @@ class robotMovement:
 
     def updateEncoder(self):
         self.e.record()
+        # print(self.e.direction)
 
     def getPosition(self):
         return self.e.get()

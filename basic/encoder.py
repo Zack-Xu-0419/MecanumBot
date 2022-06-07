@@ -15,6 +15,7 @@ class encoder:
 
         self.previousStatusTracker = []
         self.totalTurns = []
+        self.correctionMode = False
         
         for port, i in zip(ports, range(4)):
             self.previousStatusTracker.append(GPIO.input(port))
@@ -23,13 +24,20 @@ class encoder:
 
     def directionSet(self, direction):
         self.direction = direction
+        if(direction == 2):
+            # Correction Mode
+            self.correctionMode = True
     
     def record(self):
         for port, i in zip(self.ports, range(4)):
             currentStatus = GPIO.input(port)
-            if currentStatus != self.previousStatusTracker[i]:
+            if self.correctionMode:
+                self.totalTurns[i] = abs(self.totalTurns[i]) - 1
+            
+            elif currentStatus != self.previousStatusTracker[i]:
                 self.totalTurns[i] += 1 * self.direction
                 self.previousStatusTracker[i] = currentStatus
+            self.previousStatusTracker[i] = currentStatus
 
     def get(self):
         return self.totalTurns

@@ -51,7 +51,7 @@ I = 0
 
 # Encoder - moved this to motorControllerEncoder
 # e = encoder.encoder(encoderPorts)
-# encoderTest = False
+encoderTest = False
 
 
 while True:
@@ -78,14 +78,21 @@ while True:
     if joystick.get_button(1) == 1:
         encoderTest = False
 
+
     # update encoder position and get encoder
     movement.updateEncoder()
     position = movement.getPosition()
 
     if encoderTest:
+
+        # for i in range(4):
+            # position[i] = -1 * position[i]
         print(position)
+        p = [-position[0], -position[1], -position[2], -position[3]]
+        movement.setPower(p)
         # y = -position[0]
-        # x = 0
+        y = 0
+        x = 0
 
     if headingAssist:
         # Get current headingtimeDif = time.time() - startTime
@@ -120,22 +127,18 @@ while True:
         angle += 180
         angle = 180 - angle * -1
 
-    if angle > 90 and angle < 270:
-        e.directionSet(-1)
-    else:
-        e.directionSet(1)
-
     power = math.sqrt(x*x + y*y)
 
     if(power != 0 or abs(turn) > 0.5):
-        print("moving")
+        # print("moving")
         if(power > 99):
             power = 100
         if(turn != 0):
             movement.move(angle, power, turn)
         else:
             movement.move(angle, power)
-    elif(abs(heading - result) < 1 or not headingAssist):
+    elif(abs(heading - result) < 1 and not headingAssist and not encoderTest):
         movement.stop()
+        # print("Stopped")
 
     time.sleep(sleep)
