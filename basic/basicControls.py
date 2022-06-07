@@ -22,17 +22,20 @@ class robotMovement:
         self.backward = backward
         self.motor = controller.motorController(forward, backward)
         if runTest:
-            motor.runTest()
+            self.motor.runTest()
         self.motor.startPWM()
         controller.power.activate(self)
         self.lastMoveTime = time.time()
         time.sleep(0.3)
-    def move(self, angle, power, turn = 0):
+
+    def move(self, angle, power, turn=0):
         self.powers = []
-        self.powers.append(power * math.sin(math.radians(angle + 45)) - turn) #RightFront
-        self.powers.append(self.powers[0] + 2 * turn) #LeftBack
-        self.powers.append(power * math.cos(math.radians(angle + 45)) + turn) #LeftFront
-        self.powers.append(self.powers[2] - 2 * turn) #RightBack
+        self.powers.append(
+            power * math.sin(math.radians(angle + 45)) - turn)  # RightFront
+        self.powers.append(self.powers[0] + 2 * turn)  # LeftBack
+        self.powers.append(
+            power * math.cos(math.radians(angle + 45)) + turn)  # LeftFront
+        self.powers.append(self.powers[2] - 2 * turn)  # RightBack
 
         counter = 0
         # Set Power
@@ -51,12 +54,11 @@ class robotMovement:
             else:
                 self.motor.pwmControl(self.backward[counter], -i)
                 self.motor.pwmControl(self.forward[counter], 0)
-            counter+=1
+            counter += 1
         self.lastMoveTime = time.time()
+
     def stop(self):
         self.motor.stop()
+
     def on(self):
         controller.power.activate(self)
-        
-
-

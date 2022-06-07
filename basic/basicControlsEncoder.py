@@ -1,145 +1,74 @@
-import basicControls
-import motorController
+import motorController as controller
 import time
-import math
 import pygame
-import FaBo9Axis_MPU9250
+import math
 import encoder
-import threading
-
 
 forward = [27, 6, 13, 16]
 backward = [17, 5, 19, 26]
-encoderPorts = [14, 18, 22, 15]
-movement = basicControls.robotMovement(forward, backward, False)
-
-movement.move(90, 100)
-time.sleep(0.2)
-movement.move(270, 100)
-time.sleep(0.2)
-movement.stop()
-
-# Calibrate Heading
-mpu9250 = FaBo9Axis_MPU9250.MPU9250()
-
-result = 0
-
-total = 0
-for i in range(500):
-    total += mpu9250.readGyro()['z']
-offset = total/500
-
-# BELOW IS JOYSTICK CONTROLLS
-
-pygame.init()
-pygame.joystick.init()
 
 
-headingAssist = False
-heading = 0
+# power = controller.power()
+
+# motorCtrl = controller.motorController(forward, backward)
+# motorCtrl.runTest()
+# time.sleep(2)
+# motorCtrl.startPWM()
+# time.sleep(2)
 
 
-startTime = time.time()
-prevError = 0
+class robotMovement:
+    def __init__(self, forward, backward, runTest):
+        self.forward = forward
+        self.backward = backward
+        self.motor = controller.motorController(forward, backward)
+        if runTest:
+            self.motor.runTest()
+        self.motor.startPWM()
+        controller.power.activate(self)
+        self.lastMoveTime = time.time()
+        time.sleep(0.3)
+        self.e = encoder.encoder([14, 18, 22, 15])
 
-sleep = 0.001
+    def move(self, angle, power, turn=0):
+        self.powers = []
+        self.powers.append(
+            power * math.sin(math.radians(angle + 45)) - turn)  # RightFront
+        self.powers.append(self.powers[0] + 2 * turn)  # LeftBack
+        self.powers.append(
+            power * math.cos(math.radians(angle + 45)) + turn)  # LeftFront
+        self.powers.append(self.powers[2] - 2 * turn)  # RightBack
 
-pSet = 1.7 * sleep / 0.05
-iSet = 0.6
-dSet = 0.0008
+        counter = 0
+        # Set Power
+        for i in self.powers:
 
-I = 0
+            if(time.time() - self.lastMoveTime > 5):
+                controller.power.activate(self)
+            if(i > 100):
+                i = 100
+            if(i < -100):
+                i = -100
+            # print(i)
+            if(i > 0):
+                self.motor.pwmControl(self.forward[counter], i)
+                self.motor.pwmControl(self.backward[counter], 0)
+                self.e.directionSet(1)
+            else:
+                self.motor.pwmControl(self.backward[counter], -i)
+                self.motor.pwmControl(self.forward[counter], 0)
+                self.e.directionSet(-1)
+            counter += 1
+        self.lastMoveTime = time.time()
 
-# Encoder
-e = encoder.encoder(encoderPorts)
-encoderTest = False
+    def updateEncoder(self):
+        self.e.record()
 
+    def getPosition(self):
+        return self.e.get()
 
-while True:
-    for event in pygame.event.get():
-        pass
-    joystick = pygame.joystick.Joystick(0)
-    joystick.init()
-    x = joystick.get_axis(0) * 100
-    y = joystick.get_axis(1) * -100
-    if joystick.get_button(7) == 1:
-        headingAssist = True
-    if joystick.get_button(6) == 1:
-        headingAssist = False
-    if joystick.get_button(12) == 1:
-        exit()
-    if joystick.get_button(3) == 1:
-        pSet = float(input("P")) * sleep / 0.05
-        iSet = float(input("I"))
-        dSet = float(input("D"))
-    if joystick.get_button(14) == 1:
-        movement.on()
-    if joystick.get_button(0) == 1:
-        encoderTest = True
-    if joystick.get_button(1) == 1:
-        encoderTest = False
+    def stop(self):
+        self.motor.stop()
 
-    # update encoder position and get encoder
-    e.record()
-    position = e.get()
-    if(y < 0):
-        e.directionSet(-1)
-
-    if encoderTest:
-        # print(position)
-        y = -position[0]
-        x = 0
-
-    if headingAssist:
-        # Get current headingtimeDif = time.time() - startTime
-        start = time.time()
-        mag = mpu9250.readGyro()
-        timeDif = time.time() - start
-        result += round((mag['z'] - offset)* (timeDif), 3) * 195
-        heading += joystick.get_axis(2) * -50
-
-        # PID
-        error = -(heading - result)
-
-        P = error * pSet
-        I += error * timeDif * iSet
-        I/=2
-        D = ((prevError - error) / timeDif) * dSet
-        # print(f"P:{P}, I:{I}, D:{D}")
-        prevError = error
-        turn = (P+I-D)
-
-        # movement.move(0, 0, (P+I-D))
-        # print(f"MoveDirection: {(heading-result)}")
-        # print(f"Target:{heading}")
-        # print(f"Current: {result}")
-    else:
-        turn = joystick.get_axis(2) * 50
-    
-
-    angle = math.atan2(x, y) * -1
-    angle = math.degrees(angle)
-
-    if angle < 0:
-        angle += 180
-        angle = 180 - angle * -1
-    
-    if angle > 90 and angle < 270:
-        e.directionSet(-1)
-    else:
-        e.directionSet(1)
-    
-    power = math.sqrt(x*x + y*y)
-
-    if(power != 0 or abs(turn) > 0.5):
-        print("moving")
-        if(power > 99):
-            power = 100
-        if(turn != 0):
-            movement.move(angle, power, turn)
-        else:
-            movement.move(angle, power)
-    elif(abs(heading - result) < 1 or not headingAssist):
-        movement.stop()
-
-    time.sleep(sleep)
+    def on(self):
+        controller.power.activate(self)
