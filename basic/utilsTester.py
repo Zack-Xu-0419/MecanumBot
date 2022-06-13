@@ -1,4 +1,4 @@
-import basicControlsEncoder
+import utils
 import motorController
 import time
 import math
@@ -10,7 +10,7 @@ import threading
 
 forward = [27, 6, 13, 16]
 backward = [17, 5, 19, 26]
-movement = basicControlsEncoder.robotMovement(forward, backward, False)
+movement = utils.robotMovement(forward, backward, False)
 
 # movement.move(90, 100)
 # time.sleep(0.2)
@@ -25,7 +25,8 @@ result = 0
 
 total = 0
 for i in range(500):
-    total += mpu9250.readGyro()['z']
+    if mpu9250.readGyro()['z'] != "Offline":
+        total += mpu9250.readGyro()['z']
 offset = total/500
 
 # BELOW IS JOYSTICK CONTROLLS
@@ -41,9 +42,9 @@ heading = 0
 startTime = time.time()
 prevError = 0
 
-sleep = 0.001
+sleep = 0.01
 
-pSet = 1.7 * sleep / 0.05
+pSet = 2 * sleep / 0.05
 iSet = 0.6
 dSet = 0.0008
 
@@ -52,6 +53,9 @@ I = 0
 # Encoder - moved this to motorControllerEncoder
 # e = encoder.encoder(encoderPorts)
 encoderTest = False
+
+# robot position coordinate Tracker
+robotPosition = [0, 0]
 
 
 while True:
@@ -78,40 +82,33 @@ while True:
     if joystick.get_button(1) == 1:
         encoderTest = False
 
-
     # update encoder position and get encoder
     movement.updateEncoder()
     position = movement.getPosition()
 
     if encoderTest:
-
-        # for i in range(4):
-            # position[i] = -1 * position[i]
-        print(position)
-        p = [-position[0], -position[1], -position[2], -position[3]]
-        movement.setPower(p)
-        # y = -position[0]
-        y = 0
-        x = 0
+        print(position, end="")
+        movement.setPower([-position[0], -position[1], -position[2], -position[3]])
 
     if headingAssist:
         # Get current headingtimeDif = time.time() - startTime
         start = time.time()
         mag = mpu9250.readGyro()
-        timeDif = time.time() - start
-        result += round((mag['z'] - offset) * (timeDif), 3) * 195
-        heading += joystick.get_axis(2) * -50
+        if str(mag['z']) != "Offline":
+            timeDif = time.time() - start
+            result += round((mag['z'] - offset) * (timeDif), 3) * 195
+            heading += joystick.get_axis(2) * -50
 
-        # PID
-        error = -(heading - result)
+            # PID
+            error = -(heading - result)
 
-        P = error * pSet
-        I += error * timeDif * iSet
-        I /= 2
-        D = ((prevError - error) / timeDif) * dSet
-        # print(f"P:{P}, I:{I}, D:{D}")
-        prevError = error
-        turn = (P+I-D)
+            P = error * pSet
+            I += error * timeDif * iSet
+            I /= 2
+            D = ((prevError - error) / timeDif) * dSet
+            # print(f"P:{P}, I:{I}, D:{D}")
+            prevError = error
+            turn = (P+I-D)
 
         # movement.move(0, 0, (P+I-D))
         # print(f"MoveDirection: {(heading-result)}")

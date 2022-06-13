@@ -23,9 +23,12 @@ while True:
     dt = time.time() - startTime
     r = round(r, 3)
     result += r * dt
-    startTime = time.time()
 
     # Distance
     distance += result * dt
+    
     print(distance, result)
+
+    startTime = time.time()
+
     time.sleep(0.05)
