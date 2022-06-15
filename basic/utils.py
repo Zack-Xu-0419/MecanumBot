@@ -1,7 +1,6 @@
 import time
 import pygame
 import math
-import encoder
 import RPi.GPIO as GPIO
 import rplidar as RPLidar
 
