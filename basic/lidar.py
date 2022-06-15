@@ -24,17 +24,44 @@ class lidarModule():
 
     def getWallInFront(self):
         scan = next(self.iterator)
+        totalChange = 0
+        prevDist = scan[0][2]
+        # print(i[0], i[1])
+        distance = 0
+        counter = 0
+        rightMost = 0
         for i in scan:
-            # print(i[0], i[1])
-            distance = 0
-            counter = 0
             if(i[2] < 1000 and (i[1] > 315 or i[1] < 45)):
+                currentDist = i[2]
+                totalChange += currentDist - prevDist
+                prevDist = currentDist
+                counter += 1
+                distance += currentDist
+                if i[1] > rightMost:
+                    rightMost = i[1]
+        if counter != 0:
+            return (distance/counter, totalChange)
+        else:
+            return (0, 0)
+
+    def getWallInDirection(self, direction, range = 20):
+        scan = next(self.iterator)
+        distance = 0
+        counter = 0
+        directionLeft = direction - range
+        directionRight = direction + range
+
+        print(directionLeft)
+        print(directionRight)
+        for i in scan:
+            print(i[1]-directionLeft)
+            if(i[2] < 1000 and (i[1]-directionLeft > 0 and i[1]-directionLeft < directionRight)):
                 counter += 1
                 distance += i[2]
-            if counter != 0:
-                return (distance/counter)
-            else:
-                return 0
+        if counter != 0:
+            return distance/counter
+        else:
+            return 0
 
     def __init__(self):
         self.lidar = RPLidar(PORT_NAME)

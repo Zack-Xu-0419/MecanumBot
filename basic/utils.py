@@ -3,18 +3,15 @@ import pygame
 import math
 import encoder
 import RPi.GPIO as GPIO
+import rplidar as RPLidar
 
 forward = [27, 6, 13, 16]
 backward = [17, 5, 19, 26]
 
-
-# power = controller.power()
-
-# motorCtrl = controller.motorController(forward, backward)
-# motorCtrl.runTest()
-# time.sleep(2)
-# motorCtrl.startPWM()
-# time.sleep(2)
+PORT_NAME = '/dev/ttyUSB0'
+DMAX = 2000
+IMIN = 0
+IMAX = 50
 
 
 class robotMovement:
@@ -44,16 +41,16 @@ class robotMovement:
 
     def setPower(self, powers=[]):
         if len(powers) != 0:
-            print("D Overide")
+            # print("D Overide")
             self.powers = powers
         counter = 0
 
         # Set Power
         # print("PowerSet")
         for i in self.powers:
-            print(round(i, 2))
-            if(time.time() - self.lastMoveTime > 5):
-                power.activate(self)
+            # print(round(i, 2))
+            # if(time.time() - self.lastMoveTime > 5):
+            #     power.activate(self)
             if(i > 100):
                 i = 100
             if(i < -100):
@@ -122,9 +119,9 @@ class motorController:
     def __init__(self, portsForward, portsBackward):
         GPIO.setmode(GPIO.BCM)
         self.portsForward = portsForward
-        setUp = setup(self.portsForward)
+        setup(self.portsForward)
         self.portsBackward = portsBackward
-        setUp = setup(self.portsBackward)
+        setup(self.portsBackward)
         self.motors = []
         self.e = encoder([14, 18, 22, 15])
 
@@ -202,3 +199,67 @@ class power():
         GPIO.output(0, False)
         GPIO.cleanup(0)
         time.sleep(0.3)
+
+
+class lidarModule():
+    def getWallInFront(self):
+        scan = next(self.iterator)
+        totalChange = 0
+        prevDist = scan[0][2]
+        # print(i[0], i[1])
+        distance = 0
+        counter = 0
+        rightMost = 0
+        for i in scan:
+            if(i[2] < 1000 and (i[1] > 315 or i[1] < 45)):
+                currentDist = i[2]
+                totalChange += currentDist - prevDist
+                prevDist = currentDist
+                counter += 1
+                distance += currentDist
+                if i[1] > rightMost:
+                    rightMost = i[1]
+        if counter != 0:
+            return distance/counter
+        else:
+            return 0
+
+    def getWallInDirection(self, direction, range=20):
+
+        if(direction - range < 0):
+            self.directionLeft = direction
+            self.directionRight = direction + 2 * range
+        else:
+            self.directionLeft = direction - range
+            self.directionRight = direction + range
+
+        scan = next(self.iterator)
+        distance = 0
+        counter = 0
+
+        for i in scan:
+            d = i[1]
+            # if i[2] < 400:
+            #     print(d)
+            d += range
+            if d > 360:
+                d -= 360
+            if((d-self.directionLeft > 0 and d-self.directionLeft < self.directionRight)):
+                # print(i[1])
+                counter += 1
+                distance += i[2]
+        if counter != 0:
+            return distance/counter
+        else:
+            return 0
+
+    def __init__(self):
+        self.directionLeft = 0
+        self.directionRight = 0
+        self.lidar = RPLidar.RPLidar(PORT_NAME)
+        self.lidar.motor_speed = 0
+        self.iterator = self.lidar.iter_scans(max_buf_meas=2000)
+
+    def stop(self):
+        self.lidar.stop()
+        self.lidar.disconnect()

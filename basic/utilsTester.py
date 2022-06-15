@@ -48,7 +48,7 @@ pSet = 2 * sleep / 0.05
 iSet = 0.6
 dSet = 0.0008
 
-I = 0
+I = 0ti
 
 # Encoder - moved this to motorControllerEncoder
 # e = encoder.encoder(encoderPorts)

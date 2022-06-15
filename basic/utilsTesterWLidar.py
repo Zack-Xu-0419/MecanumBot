@@ -6,7 +6,7 @@ import pygame
 import FaBo9Axis_MPU9250
 import lidar
 
-l = lidar.lidarModule()
+l = utils.lidarModule()
 
 
 forward = [27, 6, 13, 16]
@@ -71,6 +71,7 @@ while True:
     if joystick.get_button(6) == 1:
         headingAssist = False
     if joystick.get_button(12) == 1:
+        l.stop()
         exit()
     if joystick.get_button(3) == 1:
         pSet = float(input("P")) * sleep / 0.05
@@ -83,14 +84,33 @@ while True:
     if joystick.get_button(1) == 1:
         encoderTest = False
 
-    # update encoder position and get encoder
-    movement.updateEncoder()
-    position = movement.getPosition()
-    l.getWallInFront()
+
+    angle = math.atan2(x, y)
+    angle = math.degrees(angle)
+    avoidance = False
 
     if encoderTest:
-        # If too far from wall
-        y += (l.getWallInFront() - 150)*0.1
+        # update encoder position and get encoder
+        movement.updateEncoder()
+        position = movement.getPosition()
+        # l.getWallInFront()
+        # dist, rotation = l.getWallInFront()
+        # # If not correct distance from wall
+        # # y += (dist - 150)*0.1
+        # print(rotation)
+        # # If Rotated
+        # turn = rotation*0.5
+        if(angle < 0):
+            angle = 180 + (angle + 180)
+        distance = l.getWallInDirection(angle, range=20)
+        # print(angle)
+        print(distance)
+        if(distance < 400):
+            avoidance = True
+            print("A")
+        
+    angle *= -1
+        
 
     if headingAssist:
         # Get current headingtimeDif = time.time() - startTime
@@ -119,8 +139,6 @@ while True:
     else:
         turn = joystick.get_axis(2) * 50
 
-    angle = math.atan2(x, y) * -1
-    angle = math.degrees(angle)
 
     if angle < 0:
         angle += 180
@@ -136,8 +154,11 @@ while True:
             movement.move(angle, power, turn)
         else:
             movement.move(angle, power)
-    elif(abs(heading - result) < 1 or not headingAssist and not encoderTest):
+    elif(abs(heading - result) < 1 or (not headingAssist and not encoderTest)):
         movement.stop()
         # print("Stopped")
+    
+    if avoidance:
+        movement.stop()
 
     time.sleep(sleep)
