@@ -1,5 +1,4 @@
 import utils
-import motorController
 import time
 import math
 import pygame
@@ -45,7 +44,7 @@ prevError = 0
 
 sleep = 0.01
 
-pSet = 2 * sleep / 0.05
+pSet = 1.6 * sleep / 0.05
 iSet = 0.6
 dSet = 0.0008
 
