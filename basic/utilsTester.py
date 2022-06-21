@@ -1,11 +1,8 @@
 import utils
-import motorController
 import time
 import math
 import pygame
 import FaBo9Axis_MPU9250
-import encoder
-import threading
 
 
 forward = [27, 6, 13, 16]
@@ -48,7 +45,7 @@ pSet = 2 * sleep / 0.05
 iSet = 0.6
 dSet = 0.0008
 
-I = 0ti
+I = 0
 
 # Encoder - moved this to motorControllerEncoder
 # e = encoder.encoder(encoderPorts)
@@ -70,7 +67,7 @@ while True:
     if joystick.get_button(6) == 1:
         headingAssist = False
     if joystick.get_button(12) == 1:
-        exit()
+        break
     if joystick.get_button(3) == 1:
         pSet = float(input("P")) * sleep / 0.05
         iSet = float(input("I"))
@@ -88,7 +85,8 @@ while True:
 
     if encoderTest:
         print(position, end="")
-        movement.setPower([-position[0], -position[1], -position[2], -position[3]])
+        movement.setPower(
+            [-position[0], -position[1], -position[2], -position[3]])
 
     if headingAssist:
         # Get current headingtimeDif = time.time() - startTime

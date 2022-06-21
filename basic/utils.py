@@ -24,7 +24,7 @@ class robotMovement:
         power.activate(self)
         self.lastMoveTime = time.time()
         time.sleep(0.3)
-        self.e = encoder([14, 18, 22, 15])
+        self.o = encoder([14, 18, 22, 15])
         self.powers = [0, 0, 0, 0]
 
     def move(self, angle, power, turn=0):
@@ -58,60 +58,26 @@ class robotMovement:
             if(i > 0):
                 self.motor.pwmControl(self.forward[counter], i)
                 self.motor.pwmControl(self.backward[counter], 0)
-                self.e.directionSet(1, counter)
+                self.o.directionSet(1, counter)
             else:
                 self.motor.pwmControl(self.backward[counter], -i)
                 self.motor.pwmControl(self.forward[counter], 0)
-                self.e.directionSet(-1, counter)
+                self.o.directionSet(-1, counter)
             counter += 1
         self.lastMoveTime = time.time()
 
     def updateEncoder(self):
-        self.e.record()
-        # print(self.e.direction)
+        self.o.record()
+        # print(self.o.direction)
 
     def getPosition(self):
-        return self.e.get()
+        return self.o.get()
 
     def stop(self):
         self.motor.stop()
 
     def on(self):
         power.activate(self)
-
-
-class encoder:
-    def __init__(self, ports):
-        # RF, LB, LF, RB
-
-        self.ports = ports
-        self.directions = [1, 1, 1, 1]
-        # 1 for positive, -1 for negative
-
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.ports, GPIO.IN)
-
-        self.previousStatusTracker = []
-        self.totalTurns = []
-        self.correctionMode = False
-
-        for port, i in zip(ports, range(4)):
-            self.previousStatusTracker.append(GPIO.input(port))
-            self.totalTurns.append(0)
-        print(self.previousStatusTracker)
-
-    def directionSet(self, direction, item):
-        self.directions[item] = direction
-
-    def record(self):
-        for port, i in zip(self.ports, range(4)):
-            currentStatus = GPIO.input(port)
-            if currentStatus != self.previousStatusTracker[i]:
-                self.totalTurns[i] += 1 * self.directions[i]
-                self.previousStatusTracker[i] = currentStatus
-
-    def get(self):
-        return self.totalTurns
 
 
 class motorController:
@@ -122,7 +88,7 @@ class motorController:
         self.portsBackward = portsBackward
         setup(self.portsBackward)
         self.motors = []
-        self.e = encoder([14, 18, 22, 15])
+        self.o = odometry([14, 18, 22, 15])
 
     def runTest(self):
         GPIO.output(13, GPIO.HIGH)
@@ -158,15 +124,15 @@ class motorController:
         self.motors[index].ChangeDutyCycle(math.sqrt(dutyCycle/100) * 100)
         # if forward
         if index < 4:
-            self.e.directionSet(1, index)
+            self.o.directionSet(1, index)
         else:
-            self.e.directionSet(-1, index - 4)
+            self.o.directionSet(-1, index - 4)
 
     def getEncoderValue(self):
-        return self.e.get()
+        return self.o.get()
 
     def updateEncoderValue(self):
-        self.e.record()
+        self.o.record()
 
     def stop(self):
         for i in self.portsForward + self.portsBackward:
@@ -262,3 +228,37 @@ class lidarModule():
     def stop(self):
         self.lidar.stop()
         self.lidar.disconnect()
+
+
+class odometry:
+    def __init__(self, ports):
+        # Left front, Left
+
+        self.ports = ports
+        self.directions = [1, 1]
+        # 1 for positive, -1 for negative
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.ports, GPIO.IN)
+
+        self.previousStatusTracker = []
+        self.totalTurns = []
+        self.correctionMode = False
+
+        for port, i in zip(ports, range(2)):
+            self.previousStatusTracker.append(GPIO.input(port))
+            self.totalTurns.append(0)
+        print(self.previousStatusTracker)
+
+    def directionSet(self, direction, item):
+        self.directions[item] = direction
+
+    def record(self):
+        for port, i in zip(self.ports, range(2)):
+            currentStatus = GPIO.input(port)
+            if currentStatus != self.previousStatusTracker[i]:
+                self.totalTurns[i] += 1 * self.directions[i]
+                self.previousStatusTracker[i] = currentStatus
+
+    def get(self):
+        return self.totalTurns
