@@ -24,7 +24,7 @@ class robotMovement:
         power.activate(self)
         self.lastMoveTime = time.time()
         time.sleep(0.3)
-        self.o = encoder([14, 18, 22, 15])
+        self.o = odometry([18, 22])
         self.powers = [0, 0, 0, 0]
 
     def move(self, angle, power, turn=0):
@@ -251,7 +251,8 @@ class odometry:
         print(self.previousStatusTracker)
 
     def directionSet(self, direction, item):
-        self.directions[item] = direction
+        # self.directions[item] = direction
+        return 0
 
     def record(self):
         for port, i in zip(self.ports, range(2)):

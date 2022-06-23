@@ -4,56 +4,20 @@ import datetime
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from wtforms import DateField, Form, validators
 from flask import Flask, request, url_for, render_template, redirect, session
-from basic import utils
 import time
 import math
 import pygame
 import FaBo9Axis_MPU9250
+import sys
+
+sys.path.insert(0, "./basic")
+import utils
 
 
 forward = [27, 6, 13, 16]
 backward = [17, 5, 19, 26]
 movement = utils.robotMovement(forward, backward, False)
-# Calibrate Heading
-mpu9250 = FaBo9Axis_MPU9250.MPU9250()
-
-result = 0
-
-total = 0
-for i in range(500):
-    if mpu9250.readGyro()['z'] != "Offline":
-        total += mpu9250.readGyro()['z']
-offset = total/500
-
-# BELOW IS JOYSTICK CONTROLLS
-
-pygame.init()
-pygame.joystick.init()
-
-
-headingAssist = False
-heading = 0
-
-
-startTime = time.time()
-prevError = 0
-
-sleep = 0.01
-
-pSet = 2 * sleep / 0.05
-iSet = 0.6
-dSet = 0.0008
-
-I = 0
-
-# Encoder - moved this to motorControllerEncoder
-# e = encoder.encoder(encoderPorts)
-encoderTest = False
-
-# robot position coordinate Tracker
-robotPosition = [0, 0]
 
 
 currentDirectory = os.path.dirname(os.path.abspath(__file__))
@@ -94,6 +58,46 @@ def getRobotInfo():
 
 @app.route("/run", methods=["GET"])
 def run():
+    global movement
+    # Calibrate Heading
+    mpu9250 = FaBo9Axis_MPU9250.MPU9250()
+
+    result = 0
+
+    total = 0
+    for i in range(500):
+        if mpu9250.readGyro()['z'] != "Offline":
+            total += mpu9250.readGyro()['z']
+    offset = total/500
+
+    # BELOW IS JOYSTICK CONTROLLS
+
+    pygame.init()
+    pygame.joystick.init()
+
+
+    headingAssist = False
+    heading = 0
+
+
+    startTime = time.time()
+    prevError = 0
+
+    sleep = 0.01
+
+    pSet = 2 * sleep / 0.05
+    iSet = 0.6
+    dSet = 0.0008
+
+    I = 0
+
+
+    # robot position coordinate Tracker
+    robotPosition = [0, 0]
+    # Encoder - moved this to motorControllerEncoder
+    # e = encoder.encoder(encoderPorts)
+    encoderTest = False
+    
     while True:
         for event in pygame.event.get():
             pass
@@ -176,6 +180,8 @@ def run():
             # print("Stopped")
 
         time.sleep(sleep)
+
+    return render_template("index.html")
 
 
 if __name__ == '__main__':
