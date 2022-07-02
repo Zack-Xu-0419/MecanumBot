@@ -81,18 +81,34 @@ text-align: center;
         <h1 id="data">
 
         </h1>
+        <canvas id="myCanvas" width="200" height="100" style="border:1px solid #c3c3c3;">
+            Your browser does not support the canvas element.
+        </canvas>
     </div>
 </div>
 {% endblock %}
 
 {% block script %}
 <script>
+
+    const canvas = document.getElementById('myCanvas');
+    const context = canvas.getContext('2d');
+    const radius = 10;
+    // context.fillStyle = "#FF0000";
+    // context.fillRect(0, 0, 150, 75);
     function update() {
         $.ajax({
             url: "/api/getRobotInfo",
             success: function (response) {
                 for (key in response) {
                     $("#data").text(response[key])
+                    context.beginPath();
+                    context.arc(response[key], centerY, radius, 0, 2 * Math.PI, false);
+                    context.fillStyle = 'green';
+                    context.fill();
+                    context.lineWidth = 5;
+                    context.strokeStyle = '#003300';
+                    context.stroke();
                 }
             },
         });
