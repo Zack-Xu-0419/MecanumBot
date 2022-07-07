@@ -1,5 +1,4 @@
 from concurrent.futures import thread
-import utils
 import sqlite3
 import os
 import datetime
@@ -13,13 +12,25 @@ import pygame
 import FaBo9Axis_MPU9250
 from threading import Thread
 import sys
+import RPi.GPIO as GPIO
 
 sys.path.insert(0, "./basic")
+import utils
 
 
 forward = [27, 6, 13, 16]
 backward = [17, 5, 19, 26]
 movement = utils.robotMovement(forward, backward, False)
+
+
+# Calibrate Heading
+mpu9250 = FaBo9Axis_MPU9250.MPU9250()
+
+
+# BELOW IS JOYSTICK CONTROLLS
+
+pygame.init()
+pygame.joystick.init()
 
 
 currentDirectory = os.path.dirname(os.path.abspath(__file__))
@@ -29,6 +40,13 @@ app = Flask(__name__)
 app.secret_key = "Hspt"
 
 color = datetime.now().hour
+
+
+GPIO.setup(23, GPIO.OUT)
+
+softpwm1 = GPIO.PWM(23, 50)
+
+softpwm1.start(100)
 
 
 @app.route('/init', methods=["GET", "POST"])
@@ -61,9 +79,7 @@ def getRobotInfo():
 @app.route("/run", methods=["GET"])
 def run():
     def run_robot():
-        global movement
-        # Calibrate Heading
-        mpu9250 = FaBo9Axis_MPU9250.MPU9250()
+        l = utils.lidarModule()
 
         result = 0
 
@@ -73,10 +89,8 @@ def run():
                 total += mpu9250.readGyro()['z']
         offset = total/500
 
-        # BELOW IS JOYSTICK CONTROLLS
+        counter = 0
 
-        pygame.init()
-        pygame.joystick.init()
 
         headingAssist = False
         heading = 0
@@ -99,6 +113,7 @@ def run():
         encoderTest = False
 
         while True:
+            l.scan()
             for event in pygame.event.get():
                 pass
             joystick = pygame.joystick.Joystick(0)
@@ -110,6 +125,7 @@ def run():
             if joystick.get_button(6) == 1:
                 headingAssist = False
             if joystick.get_button(12) == 1:
+                print("Breaking")
                 break
             if joystick.get_button(3) == 1:
                 pSet = float(input("P")) * sleep / 0.05
@@ -121,15 +137,13 @@ def run():
                 encoderTest = True
             if joystick.get_button(1) == 1:
                 encoderTest = False
+            if joystick.get_button(11) == 1:
+                f = open(f"{counter}.txt", "a")
+                for i in l.scan():
+                    f.write(f"{i[0]}, {i[1]}\n")
+                f.close()
+                counter+=1
 
-            # update encoder position and get encoder
-            movement.updateEncoder()
-            position = movement.getPosition()
-
-            if encoderTest:
-                print(position, end="")
-                movement.setPower(
-                    [-position[0], -position[1], -position[2], -position[3]])
 
             if headingAssist:
                 # Get current headingtimeDif = time.time() - startTime
@@ -158,6 +172,11 @@ def run():
             else:
                 turn = joystick.get_axis(2) * 50
 
+            
+            # update encoder position and get encoder
+            movement.updateEncoder(result/18.08)
+            print(result/18.08)
+
             angle = math.atan2(x, y) * -1
             angle = math.degrees(angle)
 
@@ -175,7 +194,7 @@ def run():
                     movement.move(angle, power, turn)
                 else:
                     movement.move(angle, power)
-            elif(abs(heading - result) < 1 and not headingAssist and not encoderTest):
+            elif(abs(heading - result) < 1 or not headingAssist):
                 movement.stop()
                 # print("Stopped")
 
@@ -186,4 +205,4 @@ def run():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=False, host='0.0.0.0')

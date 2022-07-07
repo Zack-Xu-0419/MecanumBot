@@ -81,11 +81,11 @@ text-align: center;
         <h1 id="data">
 
         </h1>
-        <canvas id="myCanvas" width="200" height="100" style="border:1px solid #c3c3c3;">
-            Your browser does not support the canvas element.
-        </canvas>
     </div>
 </div>
+<canvas id="myCanvas" height="1000" width="1000" style="border:1px solid #c3c3c3;">
+    Your browser does not support the canvas element.
+</canvas>
 {% endblock %}
 
 {% block script %}
@@ -103,7 +103,8 @@ text-align: center;
                 for (key in response) {
                     $("#data").text(response[key])
                     context.beginPath();
-                    context.arc(response[key], 0, radius, 0, 2 * Math.PI, false);
+                    context.arc(response[key][0], response[key][1], radius, 0, 2 * Math.PI, false);
+                    context.clearRect(0, 0, 1000, 1000)
                     context.fillStyle = 'green';
                     context.fill();
                     context.lineWidth = 5;

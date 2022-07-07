@@ -3,6 +3,7 @@ import pygame
 import math
 import RPi.GPIO as GPIO
 import rplidar as RPLidar
+import traceback
 
 forward = [27, 6, 13, 16]
 backward = [17, 5, 19, 26]
@@ -18,6 +19,8 @@ class robotMovement:
         self.forward = forward
         self.backward = backward
         self.motor = motorController(forward, backward)
+        # print("initialized")
+        # print(traceback.print_stack())
         if runTest:
             self.motor.runTest()
         self.motor.startPWM()
@@ -35,6 +38,8 @@ class robotMovement:
         self.powers.append(
             power * math.cos(math.radians(angle + 45)) + turn)  # LeftFront
         self.powers.append(self.powers[2] - 2 * turn)  # RightBack
+
+        # print(angle)
 
         self.setPower()
 
@@ -58,16 +63,16 @@ class robotMovement:
             if(i > 0):
                 self.motor.pwmControl(self.forward[counter], i)
                 self.motor.pwmControl(self.backward[counter], 0)
-                self.o.directionSet(1, counter)
+                self.o.directionSet(1, 0)
             else:
                 self.motor.pwmControl(self.backward[counter], -i)
                 self.motor.pwmControl(self.forward[counter], 0)
-                self.o.directionSet(-1, counter)
+                self.o.directionSet(-1, 0)
             counter += 1
         self.lastMoveTime = time.time()
 
-    def updateEncoder(self):
-        self.o.record()
+    def updateEncoder(self, gyroOrientation):
+        self.o.record(gyroOrientation=gyroOrientation)
         # print(self.o.direction)
 
     def getPosition(self):
@@ -122,11 +127,6 @@ class motorController:
         ports = self.portsForward + self.portsBackward
         index = ports.index(portNumber)
         self.motors[index].ChangeDutyCycle(math.sqrt(dutyCycle/100) * 100)
-        # if forward
-        if index < 4:
-            self.o.directionSet(1, index)
-        else:
-            self.o.directionSet(-1, index - 4)
 
     def getEncoderValue(self):
         return self.o.get()
@@ -167,6 +167,8 @@ class power():
 
 
 class lidarModule():
+    def scan(self):
+        return next(self.iterator)
     def getWallInFront(self):
         scan = next(self.iterator)
         totalChange = 0
@@ -243,6 +245,7 @@ class odometry:
 
         self.previousStatusTracker = []
         self.totalTurns = []
+        self.position = [500, 500] #xy coordinate for current position compared to start
         self.correctionMode = False
 
         for port, i in zip(ports, range(2)):
@@ -251,15 +254,17 @@ class odometry:
         print(self.previousStatusTracker)
 
     def directionSet(self, direction, item):
-        # self.directions[item] = direction
+        self.directions[item] = direction
         return 0
 
-    def record(self):
+    def record(self, gyroOrientation):
         for port, i in zip(self.ports, range(2)):
             currentStatus = GPIO.input(port)
             if currentStatus != self.previousStatusTracker[i]:
                 self.totalTurns[i] += 1 * self.directions[i]
                 self.previousStatusTracker[i] = currentStatus
+                self.position[0] += self.directions[0] * math.cos(math.radians(gyroOrientation))
+                self.position[1] += self.directions[1] * math.sin(math.radians(gyroOrientation))
 
     def get(self):
-        return self.totalTurns
+        return self.position
