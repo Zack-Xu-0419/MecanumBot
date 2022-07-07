@@ -140,7 +140,7 @@ def run():
             if joystick.get_button(11) == 1:
                 f = open(f"{counter}.txt", "a")
                 for i in l.scan():
-                    f.write(f"{i[0]}, {i[1]}\n")
+                    f.write(f"{i[1]}, {i[2]}\n")
                 f.close()
                 counter+=1
 
