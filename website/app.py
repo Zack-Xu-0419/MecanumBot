@@ -1,4 +1,3 @@
-import utils
 from concurrent.futures import thread
 import sqlite3
 import os
@@ -16,6 +15,7 @@ import sys
 import RPi.GPIO as GPIO
 
 sys.path.insert(0, "./basic")
+import utils
 
 
 forward = [27, 6, 13, 16]
@@ -91,6 +91,7 @@ def run():
 
         counter = 0
 
+
         headingAssist = False
         heading = 0
 
@@ -141,7 +142,8 @@ def run():
                 for i in l.scan():
                     f.write(f"{i[1]}, {i[2]}\n")
                 f.close()
-                counter += 1
+                counter+=1
+
 
             if headingAssist:
                 # Get current headingtimeDif = time.time() - startTime
@@ -170,6 +172,7 @@ def run():
             else:
                 turn = joystick.get_axis(2) * 50
 
+            
             # update encoder position and get encoder
             movement.updateEncoder(result/18.08)
             print(result/18.08)
@@ -199,18 +202,6 @@ def run():
     runningRobot = Thread(target=run_robot)
     runningRobot.start()
     return render_template("index.html")
-
-
-@app.route("/computerControl", methods=["GET", 'POST'])
-def computerControl():
-    # No matter what, the RPi will always get a movement instruction from the computer (even if 0x, 0y, 0angle)
-    input = request.json
-    print(input)
-    # It will change the movement direction of the robot until the computer send a newer information.
-    print("changing robot movement")
-
-    # Then, it will return all the stats from the robot, both odometry and lidar.
-    return {"result": "Returning data"}
 
 
 if __name__ == '__main__':
