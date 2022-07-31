@@ -222,6 +222,8 @@ class lidarModule():
 
     def __init__(self):
         GPIO.setup(23, GPIO.OUT)
+        
+        self.started = True
 
         self.softpwm1 = GPIO.PWM(23, 50)
 
@@ -233,10 +235,21 @@ class lidarModule():
         self.lidar.motor_speed = 0
         self.iterator = self.lidar.iter_scans(max_buf_meas=2000)
 
+    def start(self):
+        self.started = True
+        self.softpwm1.start(100)
+
     def stop(self):
+        self.started = False
         self.softpwm1.stop()
+    
+    def kill(self):
+        self.softpwm1.stop()    
         self.lidar.stop()
         self.lidar.disconnect()
+
+    def started(self):
+        return self.started
 
 
 class odometry:

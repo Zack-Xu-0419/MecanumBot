@@ -1,4 +1,3 @@
-import utils
 from concurrent.futures import thread
 import sqlite3
 import os
@@ -15,7 +14,9 @@ from threading import Thread
 import sys
 import RPi.GPIO as GPIO
 
-sys.path.insert(0, "./basic")
+sys.path.insert(0, "../basic")
+
+import utils
 
 
 forward = [27, 6, 13, 16]
@@ -42,6 +43,17 @@ app.secret_key = "Hspt"
 color = datetime.now().hour
 
 l = utils.lidarModule()
+
+# Gyro variables
+result = 0
+total = 0
+t = None #gyro thread (we have to keep track of this to shut it off)
+
+# Lidar Variables
+scanResult = None
+l = None #lidar object (we have to keep track of this)
+lt = None #lidar Scanning thread
+
 
 
 @app.route('/init', methods=["GET", "POST"])
@@ -205,11 +217,71 @@ def run():
 
 @app.route("/computerControl", methods=["GET", 'POST'])
 def computerControl():
-    # No matter what, the RPi will always get a movement instruction from the computer (even if 0x, 0y, 0angle)
+    global result
+    global t
+    global lt
+    global l
+    global scanResult
     input = request.json
+    output = {}
+
     print(input)
+    # No matter what, the RPi will always get a movement instruction from the computer (even if 0x, 0y, 0angle)
+    if(input['command'] == "switch"):
+        # Check for which to start
+        values = input['values']
+        if values[0] == 1:
+            # Start Motor
+            utils.power()
+        if values[1] == 1:
+            if t == None:
+                # Start Thread to record gyro
+                t = Thread(target=recordGyro)
+                t.start()
+        if values[2] == 1:
+            # Start PWM for Lidar and read mode set to true.
+            if l == None:
+                print("Starting Lidar")
+                l = utils.lidarModule()
+                lt = Thread(target=idleScan)
+                lt.start()
+        
+        # Record
+        if l != None:
+            print("Scanning")
+            output["lidar"] = scanResult
     # It will change the movement direction of the robot until the computer send a newer information.
+    output['gyro'] = result
     # Then, it will return all the stats from the robot, both odometry and lidar.
+    return output
+
+
+def idleScan():
+    global l
+    global scanResult
+    while True:
+        scanResult = l.scan()
+        print("F")
+
+
+def recordGyro():
+    global result
+    global total
+
+    # Calibrate Gyro
+
+    for i in range(500):
+        if mpu9250.readGyro()['z'] != "Offline":
+            total += mpu9250.readGyro()['z']
+    offset = total/500
+
+    # Record Gyro
+    while True:
+        start = time.time()
+        mag = mpu9250.readGyro()
+        timeDif = time.time() - start
+        result += round((mag['z'] - offset) * (timeDif), 3) * 195
+
 
 
 if __name__ == '__main__':
