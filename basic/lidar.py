@@ -66,22 +66,22 @@ class lidarModule():
     def __init__(self):
         self.lidar = RPLidar(PORT_NAME)
         self.lidar.motor_speed = 0
-        # fig = plt.figure()
-        # ax = plt.subplot(111, projection='polar')
+        fig = plt.figure()
+        ax = plt.subplot(111, projection='polar')
         # ax.set_theta_direction(-1)
         # ax.set_theta_offset(np.pi / 2.0)
-        # line = ax.scatter([0, 0], [0, 0], s=5, c=[IMIN, IMAX],
-        #                   cmap=plt.cm.Greys_r, lw=0)
-        # ax.set_rmax(DMAX)
-        # ax.grid(True)
+        line = ax.scatter([0, 0], [0, 0], s=5, c=[IMIN, IMAX],
+                          cmap=plt.cm.Greys_r, lw=0)
+        ax.set_rmax(DMAX)
+        ax.grid(True)
         self.iterator = self.lidar.iter_scans(max_buf_meas=2000)
-        # while True:
-        #     before = time.time()
-        #     self.getWallInFront(iterator=self.iterator)
-        #     print(time.time() - before)
-        # ani = animation.FuncAnimation(fig, update_line,
-        #                               fargs=(iterator, line), interval=100)
-        # plt.show()
+        while True:
+            before = time.time()
+            self.getWallInFront(iterator=self.iterator)
+            print(time.time() - before)
+        ani = animation.FuncAnimation(fig, update_line,
+                                      fargs=(iterator, line), interval=100)
+        plt.show()
 
     def stop(self):
         self.lidar.stop()

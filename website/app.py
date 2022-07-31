@@ -41,12 +41,7 @@ app.secret_key = "Hspt"
 
 color = datetime.now().hour
 
-
-GPIO.setup(23, GPIO.OUT)
-
-softpwm1 = GPIO.PWM(23, 50)
-
-softpwm1.start(100)
+l = utils.lidarModule()
 
 
 @app.route('/init', methods=["GET", "POST"])
@@ -74,13 +69,19 @@ def index():
 @app.route("/api/getRobotInfo", methods=["GET"])
 def getRobotInfo():
     return {"odometryReading": movement.getPosition()}
+    
+
+scanResult = ""
+
+@app.route("/api/getLidarScan", methods=["GET"])
+def getLidarScan():
+    return {"data": scanResult}
 
 
 @app.route("/run", methods=["GET"])
 def run():
     def run_robot():
-        l = utils.lidarModule()
-
+        global scanResult
         result = 0
 
         total = 0
@@ -113,7 +114,7 @@ def run():
         encoderTest = False
 
         while True:
-            l.scan()
+            scanResult = l.scan()
             for event in pygame.event.get():
                 pass
             joystick = pygame.joystick.Joystick(0)
@@ -139,7 +140,7 @@ def run():
                 encoderTest = False
             if joystick.get_button(11) == 1:
                 f = open(f"{counter}.txt", "a")
-                for i in l.scan():
+                for i in scanResult:
                     f.write(f"{i[1]}, {i[2]}\n")
                 f.close()
                 counter+=1
@@ -205,4 +206,6 @@ def run():
 
 
 if __name__ == '__main__':
+    #start pwm for lidar
+    
     app.run(debug=False, host='0.0.0.0')

@@ -221,6 +221,12 @@ class lidarModule():
             return 0
 
     def __init__(self):
+        GPIO.setup(23, GPIO.OUT)
+
+        self.softpwm1 = GPIO.PWM(23, 50)
+
+        self.softpwm1.start(50)
+
         self.directionLeft = 0
         self.directionRight = 0
         self.lidar = RPLidar.RPLidar(PORT_NAME)
@@ -228,6 +234,7 @@ class lidarModule():
         self.iterator = self.lidar.iter_scans(max_buf_meas=2000)
 
     def stop(self):
+        self.softpwm1.stop()
         self.lidar.stop()
         self.lidar.disconnect()
 

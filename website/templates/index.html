@@ -82,10 +82,14 @@ text-align: center;
 
         </h1>
     </div>
+    <div>
+        <canvas id="lidarMap" height="1000" width="1000" style="border:1px solid #c3c3c3;"></canvas>
+    </div>
+    <canvas id="myCanvas" height="1000" width="1000">
+        Your browser does not support the canvas element.
+    </canvas>
+
 </div>
-<canvas id="myCanvas" height="1000" width="1000" style="border:1px solid #c3c3c3;">
-    Your browser does not support the canvas element.
-</canvas>
 {% endblock %}
 
 {% block script %}
@@ -94,6 +98,9 @@ text-align: center;
     const canvas = document.getElementById('myCanvas');
     const context = canvas.getContext('2d');
     const radius = 10;
+    const lidarCanvas = document.getElementById('lidarMap');
+    const lidarContext = lidarCanvas.getContext('2d');
+    const lidarRadius = 2;
     // context.fillStyle = "#FF0000";
     // context.fillRect(0, 0, 150, 75);
     function update() {
@@ -114,7 +121,31 @@ text-align: center;
             },
         });
     }
-    setInterval(update, 100);
+
+    function updateLidarMap(){
+        $.ajax({
+            url: "/api/getLidarScan",
+            success: function (response) {
+                for (key in response) {
+                    lidarContext.clearRect(0, 0, 1000, 1000)
+                    coordinates = response[key]
+
+                    for (var j = 0; j < coordinates.length; j++){
+                        inRad = coordinates[j][1] * 3.1415926/180
+                        x = 500 + coordinates[j][2] * Math.sin(inRad)
+                        y = 500 - coordinates[j][2] * Math.cos(inRad)
+                        lidarContext.beginPath();
+                        lidarContext.arc(x, y, lidarRadius, 0, 2 * Math.PI, false);
+                        lidarContext.fillStyle = 'black';
+                        lidarContext.fill();
+                    }
+
+                }
+            },
+        });
+    }
+    setInterval(update, 2000);
+    setInterval(updateLidarMap, 100);
 </script>
 
 
