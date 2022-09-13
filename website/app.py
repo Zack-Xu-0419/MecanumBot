@@ -1,3 +1,4 @@
+import utils
 from concurrent.futures import thread
 import sqlite3
 import os
@@ -15,8 +16,6 @@ import sys
 import RPi.GPIO as GPIO
 
 sys.path.insert(0, "../basic")
-
-import utils
 
 
 forward = [27, 6, 13, 16]
@@ -47,13 +46,12 @@ l = utils.lidarModule()
 # Gyro variables
 result = 0
 total = 0
-t = None #gyro thread (we have to keep track of this to shut it off)
+t = None  # gyro thread (we have to keep track of this to shut it off)
 
 # Lidar Variables
 scanResult = None
-l = None #lidar object (we have to keep track of this)
-lt = None #lidar Scanning thread
-
+l = None  # lidar object (we have to keep track of this)
+lt = None  # lidar Scanning thread
 
 
 @app.route('/init', methods=["GET", "POST"])
@@ -245,12 +243,16 @@ def computerControl():
                 l = utils.lidarModule()
                 lt = Thread(target=idleScan)
                 lt.start()
-        
+
         # Record
         if l != None:
             print("Scanning")
             output["lidar"] = scanResult
     # It will change the movement direction of the robot until the computer send a newer information.
+    if(input['command'] == "move"):
+        values = input['values']
+        movement.move(values[0], values[1], values[2])
+
     output['gyro'] = result
     # Then, it will return all the stats from the robot, both odometry and lidar.
     return output
@@ -281,7 +283,6 @@ def recordGyro():
         mag = mpu9250.readGyro()
         timeDif = time.time() - start
         result += round((mag['z'] - offset) * (timeDif), 3) * 195
-
 
 
 if __name__ == '__main__':
