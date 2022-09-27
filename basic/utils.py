@@ -1,9 +1,11 @@
+from threading import Thread
 import time
 import pygame
 import math
 import RPi.GPIO as GPIO
 import rplidar as RPLidar
 import traceback
+import FaBo9Axis_MPU9250
 
 forward = [27, 6, 13, 16]
 backward = [17, 5, 19, 26]
@@ -169,6 +171,7 @@ class power():
 class lidarModule():
     def scan(self):
         return next(self.iterator)
+
     def getWallInFront(self):
         scan = next(self.iterator)
         totalChange = 0
@@ -222,7 +225,7 @@ class lidarModule():
 
     def __init__(self, p):
         GPIO.setup(23, GPIO.OUT)
-        
+
         self.started = True
 
         self.softpwm1 = GPIO.PWM(23, 50)
@@ -242,14 +245,44 @@ class lidarModule():
     def stop(self):
         self.started = False
         self.softpwm1.stop()
-    
+
     def kill(self):
-        self.softpwm1.stop()    
+        self.softpwm1.stop()
         self.lidar.stop()
         self.lidar.disconnect()
 
     def started(self):
         return self.started
+
+
+class imu():
+    def __init__(self):
+        self.mpu9250 = FaBo9Axis_MPU9250.MPU9250()
+
+        self.result = 0
+
+        total = 0
+        for i in range(500):
+            if self.mpu9250.readGyro()['z'] != "Offline":
+                total += self.mpu9250.readGyro()['z']
+        self.offset = total/500
+
+    def track(self):
+        self.trackingThread = Thread(target=self.tracking)
+        self.trackingThread.start()
+
+    def stopTrack(self):
+        self.trackingThread.join()
+
+    def tracking(self):
+        while True:
+            start = time.time()
+            mag = self.mpu9250.readGyro()
+            if str(mag['z']) != "Offline":
+                timeDif = time.time() - start
+                self.result += round((mag['z'] - self.offset)
+                                     * (timeDif), 3) * 195
+            print(f"angle: {self.result}")
 
 
 class odometry:
@@ -265,7 +298,8 @@ class odometry:
 
         self.previousStatusTracker = []
         self.totalTurns = []
-        self.position = [500, 500] #xy coordinate for current position compared to start
+        # xy coordinate for current position compared to start
+        self.position = [500, 500]
         self.correctionMode = False
 
         for port, i in zip(ports, range(2)):
@@ -283,8 +317,10 @@ class odometry:
             if currentStatus != self.previousStatusTracker[i]:
                 self.totalTurns[i] += 1 * self.directions[i]
                 self.previousStatusTracker[i] = currentStatus
-                self.position[0] += self.directions[0] * math.cos(math.radians(gyroOrientation))
-                self.position[1] += self.directions[1] * math.sin(math.radians(gyroOrientation))
+                self.position[0] += self.directions[0] * \
+                    math.cos(math.radians(gyroOrientation))
+                self.position[1] += self.directions[1] * \
+                    math.sin(math.radians(gyroOrientation))
 
     def get(self):
         return self.position

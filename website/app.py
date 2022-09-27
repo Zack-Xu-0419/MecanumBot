@@ -1,3 +1,4 @@
+import utils
 from concurrent.futures import thread
 import sqlite3
 import os
@@ -15,9 +16,8 @@ import sys
 import RPi.GPIO as GPIO
 
 sys.path.insert(0, "../basic")
-import utils
 
-app=Flask(__name__)
+app = Flask(__name__)
 
 # No matter what, when app start, start power, lidar, and init movement module
 
@@ -30,12 +30,14 @@ backward = [17, 5, 19, 26]
 # Start power
 power = utils.power()
 power.activate()
-# TODO: 
+# TODO: start tracking
+utils.
 
 movement = utils.robotMovement(forward, backward, False)
 
 # Start lidar
 lidar = utils.lidarModule(80)
+
 
 def lidarScanning():
     global lidarValues
@@ -45,7 +47,8 @@ def lidarScanning():
         except KeyboardInterrupt:
             # lidar.kill()
             print('Safely exited lidar')
-    
+
+
 lidarThread = Thread(target=lidarScanning)
 lidarThread.start()
 
@@ -60,6 +63,7 @@ def index():
         cmd = request.json
         movement.move(cmd['angle'], cmd['power'], cmd['turn'])
         return "200"
+
 
 if __name__ == '__main__':
     # start pwm for lidar
