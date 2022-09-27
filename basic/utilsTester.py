@@ -80,8 +80,8 @@ while True:
         encoderTest = False
 
     # update encoder position and get encoder
-    movement.updateEncoder()
-    position = movement.getPosition()
+    # movement.updateEncoder()
+    # position = movement.getPosition()
 
     if encoderTest:
         print(position, end="")

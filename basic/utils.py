@@ -220,14 +220,14 @@ class lidarModule():
         else:
             return 0
 
-    def __init__(self):
+    def __init__(self, p):
         GPIO.setup(23, GPIO.OUT)
         
         self.started = True
 
         self.softpwm1 = GPIO.PWM(23, 50)
 
-        self.softpwm1.start(50)
+        self.softpwm1.start(p)
 
         self.directionLeft = 0
         self.directionRight = 0
