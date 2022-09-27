@@ -31,7 +31,8 @@ backward = [17, 5, 19, 26]
 power = utils.power()
 power.activate()
 # TODO: start tracking
-utils.
+
+imu = utils.imu()
 
 movement = utils.robotMovement(forward, backward, False)
 
@@ -61,8 +62,13 @@ def index():
         return str(lidarValues)
     if request.method == "POST":
         cmd = request.json
-        movement.move(cmd['angle'], cmd['power'], cmd['turn'])
-        return "200"
+        if cmd['cmd'] == "imuStart":
+            imu.track()
+        if cmd['cmd'] == "imuStop":
+            imu.stopTrack()
+        else:
+            movement.move(cmd['angle'], cmd['power'], cmd['turn'])
+            return "200"
 
 
 if __name__ == '__main__':

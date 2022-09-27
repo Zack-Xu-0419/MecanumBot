@@ -8,9 +8,12 @@ import numpy as np
 from tqdm import tqdm
 import pygame
 
+from basic.utils import imu
+
 # constants
 sleep = 0.01
 robotAddress = "http://10.1.24.19:5000/"
+imuIsOn = False
 
 plt.ion()
 
@@ -56,7 +59,10 @@ while True:
         if joystick.get_button(7) == 1:
             headingAssist = True
         if joystick.get_button(6) == 1:
-            headingAssist = False
+            if imuIsOn:
+                requests.post(robotAddress, json={'cmd': "imuStop"})
+            else:
+                requests.post(robotAddress, json={'cmd': "imuStart"})
         if joystick.get_button(3) == 1:
             pSet = float(input("P")) * sleep / 0.05
             iSet = float(input("I"))
