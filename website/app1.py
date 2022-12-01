@@ -1,3 +1,4 @@
+import utils
 from concurrent.futures import thread
 import sqlite3
 import os
@@ -15,7 +16,6 @@ import sys
 import RPi.GPIO as GPIO
 
 sys.path.insert(0, "../basic")
-import utils
 
 
 forward = [27, 6, 13, 16]
@@ -52,6 +52,7 @@ t = None  # gyro thread (we have to keep track of this to shut it off)
 scanResult = None
 l = None  # lidar object (we have to keep track of this)
 lt = None  # lidar Scanning thread
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
