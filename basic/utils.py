@@ -282,7 +282,10 @@ class imu():
                 timeDif = time.time() - start
                 self.result += round((mag['z'] - self.offset)
                                      * (timeDif), 3) * 195
-            print(f"angle: {self.result}")
+            # print(f"angle: {self.result}")
+            time.sleep(0.01)
+    def getAngle(self):
+        return self.result
 
 
 class odometry:

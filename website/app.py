@@ -1,4 +1,3 @@
-import utils
 from concurrent.futures import thread
 import sqlite3
 import os
@@ -16,8 +15,16 @@ import sys
 import RPi.GPIO as GPIO
 
 sys.path.insert(0, "../basic")
+import utils
 
 app = Flask(__name__)
+
+
+# Robot Modes
+stability_control = False
+currentMovement = [0, 0, 0]
+angle = 0
+offset = 0
 
 # No matter what, when app start, start power, lidar, and init movement module
 
@@ -58,17 +65,46 @@ lidarThread.start()
 def index():
     global lidarValues
     global movement
+    global stability_control
+    global scThread
+    global currentMovement
+    global offset
     if request.method == "GET":
-        return str(lidarValues)
+        return str({"lidar":lidarValues, "imu": imu.getAngle()})
     if request.method == "POST":
         cmd = request.json
+        print(cmd)
         if cmd['cmd'] == "imuStart":
+            print("started tracking")
             imu.track()
         if cmd['cmd'] == "imuStop":
+            print("stopped tracking")
             imu.stopTrack()
+        if cmd['cmd'] == "stabilityControl":
+            stability_control = not stability_control
+            if stability_control:
+                scThread = Thread(target=sc)
+                scThread.start()
+            else:
+                scThread.join()
         else:
-            movement.move(cmd['angle'], cmd['power'], cmd['turn'])
-            return "200"
+            if(stability_control):
+                currentMovement = [cmd['angle'], cmd['power'], cmd['turn']]
+                offset += cmd['turn']
+                return "200"
+            else:
+                movement.move(cmd['angle'], cmd['power'], cmd['turn'])
+                return "200"
+                
+
+def sc():
+    global angle
+    global currentMovement
+    global offset
+    while True:
+        angle = imu.getAngle() + offset *10
+        movement.move(currentMovement[0], currentMovement[1], angle/10)
+        time.sleep(0.01)
 
 
 if __name__ == '__main__':
