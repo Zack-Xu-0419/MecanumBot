@@ -19,7 +19,7 @@ imuIsOn = False
 recordingData = False
 command_to_send = " "
 auto = False
-detectWalls = False
+detectWalls = True
 
 dataHistoryX = []
 dataHistoryY = []
@@ -61,22 +61,22 @@ def detectWallPlotting():
         # print(x)
         original[int(x)-30:int(x)+30, int(y)-30:int(y)+30] = 0
 
-    # plt.imshow(original, cmap="gray")
+    cv.imshow("img", original)
 
-    annotatedColor = cv.cvtColor(original, cv.COLOR_GRAY2RGB)
+    # annotatedColor = cv.cvtColor(original, cv.COLOR_GRAY2RGB)
 
-    blurred = cv.blur(original, ksize=(17, 17))
-    edges = cv.Canny(blurred, 80, 120, apertureSize=3)
-    lines = cv.HoughLinesP(edges, rho=2, theta=math.pi/360,
-                           threshold=80, minLineLength=200, maxLineGap=200)
-    c = (255, 0, 0)
-    if lines is not None:
-        for i in lines:
-            line = i[0]
-            cv.line(annotatedColor, (line[0], line[1]),
-                    (line[2], line[3]), color=c, thickness=20)
-        print(len(lines))
-        cv.imshow("det", mat=cv.cvtColor(annotatedColor, cv.COLOR_RGB2BGR))
+    # blurred = cv.blur(original, ksize=(17, 17))
+    # edges = cv.Canny(blurred, 80, 120, apertureSize=3)
+    # lines = cv.HoughLinesP(edges, rho=2, theta=math.pi/360,
+    #                        threshold=80, minLineLength=200, maxLineGap=200)
+    # c = (255, 0, 0)
+    # if lines is not None:
+    #     for i in lines:
+    #         line = i[0]
+    #         cv.line(annotatedColor, (line[0], line[1]),
+    #                 (line[2], line[3]), color=c, thickness=20)
+    #     print(len(lines))
+    #     cv.imshow("det", mat=cv.cvtColor(annotatedColor, cv.COLOR_RGB2BGR))
 
 
 while True:
@@ -125,19 +125,6 @@ while True:
             x = joystick.get_axis(3) * 100
             y = joystick.get_axis(4) * -100
             turn = joystick.get_axis(0) * 50
-        if joystick.get_button(2) == 1:
-            # "X"
-            # Start Recording Lidar
-            recordingData = True
-
-        if joystick.get_button(1) == 1:
-            # "B"
-            # Stop Recording Lidar
-            recordingData = False
-
-            f = open("demoFile.txt", "a")
-            f.write(str(dataRecorder))
-            f.close()
 
         if joystick.get_button(6) == 1:
             # Left thumb stick
@@ -147,8 +134,10 @@ while True:
             else:
                 print("imuStarted")
                 command_to_send = "imuStart"
+
         if joystick.get_button(3) == 1:
             detectWalls = not detectWalls
+
         if joystick.get_button(0) == 1:
             # "A"
             command_to_send = "stabilityControl"
@@ -161,47 +150,6 @@ while True:
         # if joystick.get_button(9) == 1:
         #     rm = requests.post(robotAddress,
         #                        json={'angle': 0, 'power': 0, 'turn': 0})
-
-        if recordingData:
-            temp = []
-            for i in range(len(dataX)):
-                temp.append(dataX[i] + dataY[i])
-            dataRecorder.append(temp)
-
-        if auto:
-            # Stage 1 - Process Lidar Image:
-            # Only look at points closer to 45 cm
-            frontMin = 9999
-            leftMin = 9999
-            rightMin = 9999
-            frontWeight = 0
-            for i in range(len(dataHistoryY)):
-                frontWeight += dataHistoryY[i]
-                if dataHistoryX[i] < 0.35 or dataHistoryX[i] > 5.8 and dataHistoryY[i] < 350:
-                    # If Blocked in front
-                    if frontMin > dataHistoryY[i]:
-                        frontMin = dataHistoryY[i]
-
-                if dataHistoryX[i] > 0.35 and dataHistoryX[i] < 2:
-                    # If the data point is on the right
-                    if rightMin > dataHistoryY[i]:
-                        rightMin = dataHistoryY[i]
-
-                else:
-                    # If the data point is on the left
-                    if leftMin > dataHistoryY[i]:
-                        leftMin = dataHistoryY[i]
-            print(f"frontweight: {frontWeight}")
-
-            if frontMin < 250:
-                if leftMin > rightMin:
-                    x = -100
-                    y = 0
-                else:
-                    x = 100
-                    y = 0
-            else:
-                y = 10
 
         angle = math.atan2(x, y) * -1
         angle = math.degrees(angle)

@@ -28,7 +28,9 @@ offset = 0
 
 # No matter what, when app start, start power, lidar, and init movement module
 
+# Lidar global values and max range
 lidarValues = []
+maxRange = 1000
 
 # Initiate Ports as out
 forward = [27, 6, 13, 16]
@@ -52,6 +54,9 @@ def lidarScanning():
     while True:
         try:
             lidarValues = lidar.scan()
+            for i in range(len(lidarValues)):
+                if lidarValues[i] < maxRange:
+                    lidarValues.pop(i)
         except KeyboardInterrupt:
             # lidar.kill()
             print('Safely exited lidar')
