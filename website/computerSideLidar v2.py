@@ -10,14 +10,16 @@ from tqdm import tqdm
 import pygame
 import cv2 as cv
 import threading
+import sys
 
 # constants
 sleep = 0.01
 autoDistanceMax = 400
-robotAddress = "http://10.1.23.21:5000/"
+robotAddress = "http://10.1.21.239:5000/"
 imuIsOn = False
 recordingData = False
-command_to_send = " "
+print("imuStarted")
+command_to_send = "imuStart"
 auto = False
 detectWalls = True
 
@@ -46,40 +48,102 @@ pygame.joystick.init()
 print(pygame.joystick.get_count())
 
 
+def remove_close_points(points):
+    # Create a new array to store the points that are not within 10 pixels of each other
+    new_points = []
+
+    # Iterate over the points in the input array
+    for i in points:
+        x = i[0]
+        y = i[1]
+        found = False
+        for j in points:
+            if(i == j).all():
+                continue
+            if(((x-j[0])**2 + (y-j[1])**2) < 100000):
+                found = True
+                break
+        if not found:
+            new_points.append(i)
+
+    # Return the new array of points
+    return np.array(new_points)
+
+
 def detectWallPlotting():
-    print(attitudeHistory)
+    keypoints_coord = []
     cartX = []
     cartY = []
     for i in range(len(dataHistoryX)):
         cartX.append(
-            dataHistoryY[i] * math.cos(dataHistoryX[i] + math.pi - (attitudeHistory[-1]/180*math.pi)) + 3000)
+            dataHistoryY[i] * math.cos(dataHistoryX[i] + math.pi) + 3000)
         cartY.append(
-            -dataHistoryY[i] * math.sin(dataHistoryX[i] + math.pi - (attitudeHistory[-1]/180*math.pi)) + 3000)
+            -dataHistoryY[i] * math.sin(dataHistoryX[i] + math.pi) + 3000)
     original = np.zeros((6000, 6000), dtype=np.uint8)
     original.fill(255)
     for x, y in zip(cartX, cartY):
         # print(x)
-        original[int(x)-30:int(x)+30, int(y)-30:int(y)+30] = 0
+        original[int(x)-15:int(x)+15, int(y)-15:int(y)+15] = 0
+
+    # original[3000:, :] = 255
 
     cv.imshow("img", original)
 
-    # annotatedColor = cv.cvtColor(original, cv.COLOR_GRAY2RGB)
+    params = cv.SimpleBlobDetector_Params()
 
-    # blurred = cv.blur(original, ksize=(17, 17))
-    # edges = cv.Canny(blurred, 80, 120, apertureSize=3)
-    # lines = cv.HoughLinesP(edges, rho=2, theta=math.pi/360,
-    #                        threshold=80, minLineLength=200, maxLineGap=200)
-    # c = (255, 0, 0)
-    # if lines is not None:
-    #     for i in lines:
-    #         line = i[0]
-    #         cv.line(annotatedColor, (line[0], line[1]),
-    #                 (line[2], line[3]), color=c, thickness=20)
-    #     print(len(lines))
-    #     cv.imshow("det", mat=cv.cvtColor(annotatedColor, cv.COLOR_RGB2BGR))
+    # Change thresholds
+    params.minThreshold = 10
+    params.maxThreshold = 200
+
+    # Filter by Area.
+    params.filterByArea = True
+    params.minArea = 2
+
+    # Filter by Circularity
+    params.filterByCircularity = True
+    params.minCircularity = 0.01
+
+    # Filter by Convexity
+    params.filterByConvexity = True
+    params.minConvexity = 0.05
+
+    # Filter by Inertia
+    params.filterByInertia = True
+    params.minInertiaRatio = 0.01
+
+    detector = cv.SimpleBlobDetector_create(params)
+
+    # print(dir(detector))
+
+    # Detect blobs.
+    keypoints = detector.detect(original)
+
+    print(keypoints)
+
+    # Draw detected blobs as red circles.
+    # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
+
+    for point in keypoints:
+        keypoints_coord.append([point.pt[0], point.pt[1]])
+
+    keypoints_coord = np.array(keypoints_coord)
+    print(keypoints_coord)
+    final_keypoints = remove_close_points(keypoints_coord)
+
+    cv.circle(original, (3000, 3000), 50, (0, 0, 255), 20)
+
+    for i in final_keypoints:
+        cv.circle(original, (int(i[0]), int(i[1])), 100, (0, 0, 255), 5)
+
+    cv.imshow("A", original)
+
+    # Go through the array and check for poles.
+    return original
 
 
 while True:
+    print(dataHistoryX)
+    print(dataHistoryY)
     r = requests.get(robotAddress)
     # print(r.text)
 
@@ -90,7 +154,7 @@ while True:
     imuData = data['imu']/17.288
     attitudeHistory.append(imuData)
 
-    if len(attitudeHistory) > 50:
+    if len(attitudeHistory) > 100:
         attitudeHistory.pop(0)
 
     dataX = [theta / 180 * math.pi for [_, theta, _] in lidarData]
@@ -125,15 +189,6 @@ while True:
             x = joystick.get_axis(3) * 100
             y = joystick.get_axis(4) * -100
             turn = joystick.get_axis(0) * 50
-
-        if joystick.get_button(6) == 1:
-            # Left thumb stick
-            if imuIsOn:
-                print("imuStopped")
-                command_to_send = "imuStop"
-            else:
-                print("imuStarted")
-                command_to_send = "imuStart"
 
         if joystick.get_button(3) == 1:
             detectWalls = not detectWalls
