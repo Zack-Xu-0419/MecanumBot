@@ -1,4 +1,3 @@
-import utils
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -11,7 +10,9 @@ from threading import Thread
 import sys
 import RPi.GPIO as GPIO
 
-sys.path.insert(0, "../basic")
+sys.path.insert(0, "./basic")
+
+import utils
 
 app = Flask(__name__)
 
@@ -137,7 +138,9 @@ def detectWallPlotting():
 
 
 time.sleep(1)
-print(lidarValues)
+for i in range(10):
+    print(lidarValues)
+    time.sleep(1)
 
 # Initialization
 
