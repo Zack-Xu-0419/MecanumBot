@@ -15,7 +15,7 @@ import sys
 # constants
 sleep = 0.01
 autoDistanceMax = 400
-robotAddress = "http://10.1.21.239:5000/"
+robotAddress = "http://172.20.10.10:5000/"
 imuIsOn = False
 recordingData = False
 print("imuStarted")
@@ -92,7 +92,7 @@ def detectWallPlotting():
     params = cv.SimpleBlobDetector_Params()
 
     # Change thresholds
-    params.minThreshold = 10
+    params.minThreshold = 5
     params.maxThreshold = 200
 
     # Filter by Area.
