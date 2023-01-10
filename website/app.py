@@ -46,7 +46,7 @@ imu = utils.imu()
 movement = utils.robotMovement(forward, backward, False)
 
 # Start lidar
-lidar = utils.lidarModule(80)
+lidar = utils.lidarModule(40)
 
 
 def lidarScanning():
@@ -54,9 +54,13 @@ def lidarScanning():
     while True:
         try:
             lidarValues = lidar.scan()
-            for i in range(len(lidarValues)):
-                if lidarValues[i] < maxRange:
-                    lidarValues.pop(i)
+            # i = 0
+            # while i < len(lidarValues):
+            #     # print(lidarValues[i][2])
+            #     if lidarValues[i][2] > maxRange:
+            #         lidarValues.pop(i)
+            #     else:
+            #         i+=1
         except KeyboardInterrupt:
             # lidar.kill()
             print('Safely exited lidar')
