@@ -4,7 +4,7 @@ from unittest import skip
 import requests
 import json
 import time
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 import pygame
@@ -15,7 +15,7 @@ import sys
 # constants
 sleep = 0.01
 autoDistanceMax = 400
-robotAddress = "http://172.20.10.10:5000/"
+robotAddress = "http://0.0.0.0:5000/"
 imuIsOn = False
 recordingData = False
 print("imuStarted")
@@ -33,13 +33,13 @@ cartY = []
 
 dataRecorder = []  # Should be [    [[Angle, Distance], [Angle, DIstance]]    ]  Inner to outer = point -> set of points -> data across time
 
-plt.ion()
+# plt.ion()
 
-ax = plt.subplot(projection='polar')
-ax.grid(True)
+# ax = plt.subplot(projection='polar')
+# ax.grid(True)
 
 
-plt.show()
+# plt.show()
 
 
 pygame.init()
@@ -87,7 +87,7 @@ def detectWallPlotting():
 
     # original[3000:, :] = 255
 
-    cv.imshow("img", original)
+    # cv.imshow("img", original)
 
     params = cv.SimpleBlobDetector_Params()
 
@@ -130,20 +130,21 @@ def detectWallPlotting():
     print(keypoints_coord)
     final_keypoints = remove_close_points(keypoints_coord)
 
-    cv.circle(original, (3000, 3000), 50, (0, 0, 255), 20)
+    # cv.circle(original, (3000, 3000), 50, (0, 0, 255), 20)
 
     for i in final_keypoints:
-        cv.circle(original, (int(i[0]), int(i[1])), 100, (0, 0, 255), 5)
+        print(i[0], i[1])
+        # cv.circle(original, (int(i[0]), int(i[1])), 100, (0, 0, 255), 5)
 
-    cv.imshow("A", original)
+    # cv.imshow("A", original)
 
     # Go through the array and check for poles.
     return original
 
 
 while True:
-    print(dataHistoryX)
-    print(dataHistoryY)
+    # print(dataHistoryX)
+    # print(dataHistoryY)
     r = requests.get(robotAddress)
     # print(r.text)
 
@@ -168,15 +169,15 @@ while True:
     while len(dataHistoryY) > 200:
         dataHistoryY.pop(0)
 
-    # print(lidarData)
-    ax.plot(dataHistoryX, dataHistoryY, "b.")
-    ax.set_theta_direction(-1)
-    ax.set_theta_offset(np.pi / 2.0)
+    # # print(lidarData)
+    # ax.plot(dataHistoryX, dataHistoryY, "b.")
+    # ax.set_theta_direction(-1)
+    # ax.set_theta_offset(np.pi / 2.0)
     if detectWalls:
         detectWallPlotting()
 
-    ax.set_rmax(3000)
-    plt.pause(0.01)
+    # ax.set_rmax(3000)
+    # plt.pause(0.01)
     for event in pygame.event.get():
         pass
     if(pygame.joystick.get_count() != 0):
@@ -215,4 +216,4 @@ while True:
 
         command_to_send = ""
 
-    ax.clear()
+    # ax.clear()
