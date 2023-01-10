@@ -1,3 +1,4 @@
+import utils
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -9,10 +10,11 @@ import FaBo9Axis_MPU9250
 from threading import Thread
 import sys
 import RPi.GPIO as GPIO
+import cv2 as cv
+import numpy as np
 
 sys.path.insert(0, "./basic")
 
-import utils
 
 app = Flask(__name__)
 
@@ -66,15 +68,37 @@ lidarThread = Thread(target=lidarScanning)
 lidarThread.start()
 
 
+def remove_close_points(points):
+    # Create a new array to store the points that are not within 10 pixels of each other
+    new_points = []
+
+    # Iterate over the points in the input array
+    for i in points:
+        x = i[0]
+        y = i[1]
+        found = False
+        for j in points:
+            if(i == j).all():
+                continue
+            if(((x-j[0])**2 + (y-j[1])**2) < 100000):
+                found = True
+                break
+        if not found:
+            new_points.append(i)
+
+    # Return the new array of points
+    return np.array(new_points)
+
+
 def detectWallPlotting():
     keypoints_coord = []
     cartX = []
     cartY = []
     for i in range(len(lidarValues)):
         cartX.append(
-            dataHistoryY[i] * math.cos(dataHistoryX[i] + math.pi) + 3000)
+            lidarValues[i] * math.cos(lidarValues[i] + math.pi) + 3000)
         cartY.append(
-            -dataHistoryY[i] * math.sin(dataHistoryX[i] + math.pi) + 3000)
+            -lidarValues[i] * math.sin(lidarValues[i] + math.pi) + 3000)
     original = np.zeros((6000, 6000), dtype=np.uint8)
     original.fill(255)
     for x, y in zip(cartX, cartY):
@@ -83,7 +107,7 @@ def detectWallPlotting():
 
     # original[3000:, :] = 255
 
-    cv.imshow("img", original)
+    # cv.imshow("img", original)
 
     params = cv.SimpleBlobDetector_Params()
 
@@ -126,20 +150,20 @@ def detectWallPlotting():
     print(keypoints_coord)
     final_keypoints = remove_close_points(keypoints_coord)
 
-    cv.circle(original, (3000, 3000), 50, (0, 0, 255), 20)
+    # cv.circle(original, (3000, 3000), 50, (0, 0, 255), 20)
 
     for i in final_keypoints:
-        cv.circle(original, (int(i[0]), int(i[1])), 100, (0, 0, 255), 5)
-
-    cv.imshow("A", original)
+        # cv.circle(original, (int(i[0]), int(i[1])), 100, (0, 0, 255), 5)
+        print(i[0])
+        print(i[1])
 
     # Go through the array and check for poles.
-    return original
+    return keypoints
 
 
 time.sleep(1)
 for i in range(10):
-    print(lidarValues)
+    detectWallPlotting()
     time.sleep(1)
 
 # Initialization
