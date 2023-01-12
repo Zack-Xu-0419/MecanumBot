@@ -1,3 +1,4 @@
+import utils
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -13,8 +14,6 @@ import cv2 as cv
 import numpy as np
 
 sys.path.insert(0, "./basic")
-
-import utils
 
 
 app = Flask(__name__)
@@ -97,10 +96,10 @@ def detectWallPlotting():
     cartY = []
     for i in range(len(lidarValues)):
         cartX.append(
-            lidarValues[i][1] * math.cos(lidarValues[i][1] + math.pi) + 3000)
+            lidarValues[i][1] * math.cos(lidarValues[i][1] + math.pi)/100 + 250)
         cartY.append(
-            -lidarValues[i][2] * math.sin(lidarValues[i][2] + math.pi) + 3000)
-    original = np.zeros((6000, 6000), dtype=np.uint8)
+            -lidarValues[i][2] * math.sin(lidarValues[i][2] + math.pi)/100 + 250)
+    original = np.zeros((500, 500), dtype=np.uint8)
     original.fill(255)
     for x, y in zip(cartX, cartY):
         # print(x)
