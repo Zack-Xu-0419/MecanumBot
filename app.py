@@ -1,4 +1,3 @@
-import utils
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -14,6 +13,8 @@ import cv2 as cv
 import numpy as np
 
 sys.path.insert(0, "./basic")
+
+import utils
 
 
 app = Flask(__name__)
@@ -96,9 +97,9 @@ def detectWallPlotting():
     cartY = []
     for i in range(len(lidarValues)):
         cartX.append(
-            lidarValues[i] * math.cos(lidarValues[i] + math.pi) + 3000)
+            lidarValues[i][1] * math.cos(lidarValues[i][1] + math.pi) + 3000)
         cartY.append(
-            -lidarValues[i] * math.sin(lidarValues[i] + math.pi) + 3000)
+            -lidarValues[i][2] * math.sin(lidarValues[i][2] + math.pi) + 3000)
     original = np.zeros((6000, 6000), dtype=np.uint8)
     original.fill(255)
     for x, y in zip(cartX, cartY):
@@ -138,7 +139,7 @@ def detectWallPlotting():
     # Detect blobs.
     keypoints = detector.detect(original)
 
-    print(keypoints)
+    # print(keypoints)
 
     # Draw detected blobs as red circles.
     # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
@@ -161,10 +162,9 @@ def detectWallPlotting():
     return keypoints
 
 
-time.sleep(1)
 for i in range(10):
     detectWallPlotting()
-    time.sleep(1)
+    time.sleep(0.1)
 
 # Initialization
 
